@@ -1,1 +1,7 @@
-HOST_URL = "https://driven-integral-caribou.ngrok-free.app"
+HOST_URL = "https://squash-staging-322339097191.europe-west3.run.app"
+
+
+
+
+
+
