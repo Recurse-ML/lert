@@ -24,6 +24,7 @@ Deployment: upon initialization, generate the token in the local storage
 
 import json
 import secrets
+from base64 import b64encode
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -34,7 +35,9 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal
 from textual.screen import Screen
-from textual.widgets import Button, DataTable, Footer, Header, Label, Static
+from textual.widgets import Button, DataTable, Footer, Header, Label, Markdown, Static
+
+from lert.package_config import HOST_URL
 
 
 class InvestigationReport(BaseModel):
@@ -45,7 +48,7 @@ class InvestigationReport(BaseModel):
 
 
 class AlertClient:
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = HOST_URL):
         self.base_url = base_url
         self.client = httpx.AsyncClient(base_url=base_url)
         self.user_id: Optional[str] = None
@@ -91,7 +94,10 @@ class AlertClient:
         if not self.user_id or not self.secret:
             return []
 
-        headers = {"X-Logfire-User-ID": self.user_id, "X-Logfire-Secret": self.secret}
+        encoded_auth = b64encode(
+            f"{self.user_id}:{self.secret}".encode("UTF-8")
+        ).decode()
+        headers = {"Authorization": f"Basic {encoded_auth}"}
 
         response = await self.client.get("/logfire/reports/", headers=headers)
         response.raise_for_status()
@@ -103,7 +109,10 @@ class AlertClient:
         if not self.user_id or not self.secret:
             return None
 
-        headers = {"X-Logfire-User-ID": self.user_id, "X-Logfire-Secret": self.secret}
+        encoded_auth = b64encode(
+            f"{self.user_id}:{self.secret}".encode("UTF-8")
+        ).decode()
+        headers = {"Authorization": f"Basic {encoded_auth}"}
 
         response = await self.client.get(
             f"/logfire/report/{alert_id}/", headers=headers
@@ -137,6 +146,35 @@ class DetailScreen(Screen):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "back-button":
             self.app.pop_screen()
+
+
+class ReportScreen(Screen):
+    """Screen for displaying investigation reports with markdown rendering"""
+
+    BINDINGS = [
+        Binding("h", "home", "Home"),
+    ]
+
+    def __init__(self, report: InvestigationReport):
+        super().__init__()
+        self.report = report
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Container(
+            Label(
+                f"Investigation Report - Alert ID: {self.report.alert_id}",
+                id="report-title",
+            ),
+            Label(f"Status: {self.report.status}", id="report-status"),
+            Markdown(self.report.report or "No report available", id="report-content"),
+            id="report-container",
+        )
+        yield Footer()
+
+    def action_home(self) -> None:
+        """Return to home screen"""
+        self.app.pop_screen()
 
 
 class AlertApp(App):
@@ -183,6 +221,28 @@ class AlertApp(App):
         background: $panel;
         border: solid $accent;
     }
+
+    #report-container {
+        margin: 1;
+        padding: 1;
+    }
+
+    #report-title {
+        color: $primary;
+        margin-bottom: 1;
+    }
+
+    #report-status {
+        margin-bottom: 1;
+    }
+
+    #report-content {
+        margin-bottom: 1;
+        padding: 1;
+        background: $panel;
+        border: solid $accent;
+        height: 1fr;
+    }
     """
 
     BINDINGS = [
@@ -195,6 +255,7 @@ class AlertApp(App):
         self.client = AlertClient()
         self.token_visible = False
         self.user_credentials = None
+        self.reports_cache: Dict[str, InvestigationReport] = {}
 
     async def on_mount(self) -> None:
         """Initialize the application"""
@@ -255,6 +316,7 @@ class AlertApp(App):
         """Setup the data table"""
         table = self.query_one("#alert-table", DataTable)
         table.add_columns("Alert ID", "Status", "ID")
+        table.cursor_type = "row"
 
         # Update user info display
         self.update_user_info()
@@ -279,6 +341,7 @@ class AlertApp(App):
 
             for report in reports:
                 table.add_row(report.alert_id, report.status, report.id)
+                self.reports_cache[report.alert_id] = report
 
             # Restore cursor position if it's still valid
             if cursor_row < table.row_count:
@@ -295,10 +358,15 @@ class AlertApp(App):
         table = event.data_table
         row = table.get_row_at(event.cursor_row)
         alert_id = str(row[0])
+        status = str(row[1])
 
-        report = await self.client.get_report(alert_id)
+        report = self.reports_cache.get(alert_id)
         if report:
-            self.push_screen(DetailScreen(report))
+            # Navigate to report view if status is "success" and report exists
+            if status == "success" and report.report is not None:
+                self.push_screen(ReportScreen(report))
+            else:
+                self.push_screen(DetailScreen(report))
         else:
             self.notify("Failed to load investigation details", severity="error")
 

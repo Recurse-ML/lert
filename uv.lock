@@ -370,12 +370,12 @@ dependencies = [
     { name = "rich" },
     { name = "tenacity" },
     { name = "textual" },
-    { name = "textual-dev" },
 ]
 
 [package.optional-dependencies]
 dev = [
     { name = "pre-commit" },
+    { name = "textual-dev" },
 ]
 test = [
     { name = "pyright" },
@@ -398,7 +398,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'test'", specifier = ">=0.9" },
     { name = "tenacity" },
     { name = "textual", specifier = ">=4.0.0" },
-    { name = "textual-dev", specifier = ">=1.7.0" },
+    { name = "textual-dev", marker = "extra == 'dev'", specifier = ">=1.7.0" },
 ]
 provides-extras = ["test", "dev"]
 
