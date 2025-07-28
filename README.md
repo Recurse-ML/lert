@@ -2,6 +2,77 @@
 
 Demo CLI of Recurse ML alert investigator
 
+# Recurse ML X Logfire Demo
+
+## Setup
+
+1. Install `lert`
+	1. Install dependencies:
+		1. `python3.11`
+		2. `uv` (if not present)
+		3. `direnv`
+	2. Clone: https://github.com/Recurse-ML/lert
+	   TMP: `git checkout rml-262-logfire-poc`
+	3. Run `uv run lert` inside of the newly created repo.
+	   On the first run `lert` will automatically create a user for you with an authentication token, displayed in the top-right corner. Note this token down. You'll need to specify, the token when configuring the channel for the logfire alert.
+2. Clone the example repo: https://github.com/recurse-ML/logfire-example
+3. Checkout the branch with intentionally introduced bugs
+	```bash
+	git checkout demo/buggy-branch
+	```
+4. Create a logfire project
+5. Create an alert that's triggered on 500 status codes:
+   ```sql
+	SELECT * FROM RECORDS WHERE http_response_status_code>=500;
+	```
+	1. Create a channel for listening to the alert:
+		1. Create a new channel to send alerts to a specific destination
+		2. Channel Name: Recurse ML
+		3. Type: Webhook
+		4. Format: Slack Legacy (for Discord, etc.)
+		5. Webhook URL: `<base-url>/your-lert-token`
+		6. Select alert variant: Alert query has matches
+6. Set the `LOGFIRE_TOKEN` in the `.env.example` file in `logfire-example` root.
+7. `cp .env.example .env`
+8. Ensure docker is running on your system.
+9. Run the webapp: `sh ./start-app.sh`
+   `docker compose watch`
+10. Check that frontend is served on `http://localhost:5173` and backend (docs) on `http://localhost:8000/docs`.
+
+## Triggering errors
+
+1. Any of the actions bellow should trigger an alert.
+2. You can verify that the action has been executed successfully by navigating the live logs page on seeing whether there's an ERROR https://logfire-us.pydantic.dev/<user-name>/<project-name>
+	(alerts take)
+
+**Existing endpoints:**
+
+GET request to 
+```bash
+curl -X 'POST' \
+  'http://localhost:8000/api/v1/password-recovery/foobar%40tar.com' \
+  -H 'accept: application/json' \
+  -d ''
+```
+
+**Creating new errors:** you might want to introduce your own bugs into the code and see Recurse ML analysis results:
+1. Modify the web app's code.
+2. Commit and push the changes
+3. Run `sh ./start-app.sh`
+4. Trigger the alert.
+
+## Bring Your Own Repo
+
+⚠️If using your own repo, ensure that [Recurse ML GH App](https://github.com/marketplace/recurse-ml/) is installed on it⚠️
+
+## Limitations
+
+1. Assumes alert is triggered by the following query:
+   ```sql
+	SELECT * FROM RECORDS WHERE http_response_status_code>=500;
+	```
+
+
 # CLI Specs
 
 Interface:
