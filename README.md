@@ -30,14 +30,16 @@ Demo CLI of Recurse ML alert investigator
 		2. Channel Name: Recurse ML
 		3. Type: Webhook
 		4. Format: Slack Legacy (for Discord, etc.)
-		5. Webhook URL: `<base-url>/your-lert-token`
-		6. Select alert variant: Alert query has matches
-6. Set the `LOGFIRE_TOKEN` in the `.env.example` file in `logfire-example` root.
-7. `cp .env.example .env`
-8. Ensure docker is running on your system.
-9. Run the webapp: `sh ./start-app.sh`
+		5. Webhook URL: `https://squash-staging-322339097191.europe-west3.run.app/logfire/<your-lert-token>/`
+		    **TODO: change to prod url after deploying**
+		7. Select alert variant: Alert query has matches
+6. Create a write token in `https://logfire-us.pydantic.dev/<user-name>/<project-name>/settings/write-tokens`
+7. Set the `LOGFIRE_TOKEN` in the `.env.example` file in `logfire-example` root.
+8. `cp .env.example .env`
+9. Ensure docker is running on your system.
+10. Run the webapp: `sh ./start-app.sh`
    `docker compose watch`
-10. Check that frontend is served on `http://localhost:5173` and backend (docs) on `http://localhost:8000/docs`.
+11. Check that frontend is served on `http://localhost:5173` and backend (docs) on `http://localhost:8000/docs`.
 
 ## Triggering errors
 

@@ -308,7 +308,7 @@ class AlertApp(App):
         if self.user_credentials:
             user_id = self.user_credentials.get("id", "N/A")
             secret = self.user_credentials.get("secret", "N/A")
-            user_info.update(f"User ID: {user_id} | Secret: {secret}")
+            user_info.update(f"User ID: {user_id} | Secret: {secret}\n(Can't copy? Secret is located in {str(self.client.config_file)})")
         else:
             user_info.update("Connecting...")
 
