@@ -1,7 +1,1 @@
-HOST_URL = "https://squash-staging-322339097191.europe-west3.run.app"
-
-
-
-
-
-
+HOST_URL = "https://logfire-test---squash-staging-b7tytoh6fa-ey.a.run.app"

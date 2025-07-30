@@ -32,10 +32,11 @@ Demo CLI of Recurse ML alert investigator
 		1. Create a new channel to send alerts to a specific destination
 		2. Channel Name: Recurse ML
 		3. Type: Webhook
-		4. Format: Slack Legacy (for Discord, etc.)
-		5. Webhook URL: `https://squash-staging-322339097191.europe-west3.run.app/logfire/<your-lert-token>/`
+		4. Format: Raw Data.
+		5. Webhook URL: `https://logfire-test---squash-staging-b7tytoh6fa-ey.a.run.app/logfire/<your-lert-token>/`
 		    **TODO: change to prod url after deploying**
 		7. Select alert variant: Alert query has matches
+        8. Click "Send a test alert". You should receive a 200 status code.
 6. Create a write token in `https://logfire-us.pydantic.dev/<user-name>/<project-name>/settings/write-tokens`
 7. Set the `LOGFIRE_TOKEN` in the `.env.example` file in `logfire-example` root.
 8. `cp .env.example .env`
