@@ -23,7 +23,7 @@ Deployment: upon initialization, generate the token in the local storage
 """
 
 import json
-import secrets
+import sys
 from base64 import b64encode
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -56,6 +56,21 @@ class AlertClient:
         self.config_dir = Path.home() / ".lert"
         self.config_file = self.config_dir / "credentials.json"
 
+    def prompt_for_read_token(self) -> str:
+        """Prompt user to enter their logfire read token"""
+        print("Please enter your logfire read token:")
+
+        while True:
+            token = input("Token: ").strip()
+            if token:
+                print("✓ Token received!")
+                return token
+            else:
+                print("⚠ Token cannot be empty.")
+                retry = input("Try again? (y/n): ").lower().strip()
+                if retry != "y":
+                    raise ValueError("Logfire read token is required to proceed.")
+
     def load_credentials(self) -> Optional[Dict[str, str]]:
         """Load credentials from local storage"""
         if not self.config_file.exists():
@@ -64,15 +79,19 @@ class AlertClient:
         try:
             with open(self.config_file, "r") as f:
                 data = json.load(f)
-                self.user_id = str(data["id"])
-                self.secret = data["secret"]
-                return data
+                # Only load if both id and secret exist and are not empty
+                if data.get("id") and data.get("secret"):
+                    self.user_id = str(data["id"])
+                    self.secret = data["secret"]
+                    return data
+                return None
         except (json.JSONDecodeError, KeyError, FileNotFoundError):
             return None
 
     def save_credentials(self, data: Dict[str, str]) -> None:
         """Save credentials to local storage"""
         self.config_dir.mkdir(exist_ok=True)
+        data["webhook_url"] = f"{HOST_URL}/logfire/{data['secret']}"
         with open(self.config_file, "w") as f:
             json.dump(data, f, indent=2)
 
@@ -274,12 +293,11 @@ class AlertApp(App):
             if self.user_credentials:
                 self.notify("Loaded existing credentials", severity="information")
             else:
-                # Create new user if no credentials exist
-                # For demo purposes, generate a random read token
-                # In production, this would be managed differently
-                read_token = secrets.token_urlsafe(32)
-                self.user_credentials = await self.client.authenticate(read_token)
-                self.notify("Created new user credentials", severity="information")
+                self.notify(
+                    "No existing credentials found. Please check console for setup.",
+                    severity="warning",
+                )
+                return
 
             # Update user info in header after authentication
             self.update_user_info()
@@ -308,7 +326,9 @@ class AlertApp(App):
         if self.user_credentials:
             user_id = self.user_credentials.get("id", "N/A")
             secret = self.user_credentials.get("secret", "N/A")
-            user_info.update(f"User ID: {user_id} | Secret: {secret}\n(Can't copy? Secret is located in {str(self.client.config_file)})")
+            user_info.update(
+                f"User ID: {user_id} | Webhook URL: {HOST_URL}/logfire/{secret}\n(Can't copy? URL is located in {str(self.client.config_file)})"
+            )
         else:
             user_info.update("Connecting...")
 
@@ -380,9 +400,38 @@ class AlertApp(App):
         self.exit()
 
 
+async def setup_user_if_needed():
+    """Setup user credentials if they don't exist"""
+    client = AlertClient()
+
+    # Check if credentials already exist
+    existing_creds = client.load_credentials()
+    if existing_creds:
+        print("✓ Existing credentials found. Starting application...")
+        return
+
+    print("🔧 Setting up user credentials for first time...")
+
+    # Prompt for read token and create user
+    try:
+        read_token = client.prompt_for_read_token()
+        credentials = await client.authenticate(read_token)
+        print(f"✓ User created successfully! User ID: {credentials['id']}")
+        print("Starting application...")
+    except Exception as e:
+        print(f"❌ Failed to create user: {e}")
+        sys.exit(1)
+
+
 @click.command()
 def main():
     """Launch the alert investigation CLI"""
+    import asyncio
+
+    # Setup user credentials if needed (console mode)
+    asyncio.run(setup_user_if_needed())
+
+    # Start the textual app
     app = AlertApp()
     app.run()
 

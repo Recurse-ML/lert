@@ -88,6 +88,15 @@ Query data:
 1. GET /logfire/reports/
 2. Update the table of investigations
 
+## User creation
+
+Before creating the user:
+1. `lert` creates a template credentials.json file.
+2. Asks the user to enter their logfire read token in credentials.json (with a pop-up)
+3. Verifies that the logfire read token has been entered (asks the user again, if it hasn't)
+4. Sends a POST request to `/logfire/user/`
+
+
 ## Report View
 
 1. When a user presses enter, on an alert that has a "success" status and a InvestigationResponse.report field that's not None, they should enter a report view.
