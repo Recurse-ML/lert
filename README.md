@@ -13,8 +13,11 @@ Demo CLI of Recurse ML alert investigator
 		3. `direnv`
 	2. Clone: https://github.com/Recurse-ML/lert
 	   TMP: `git checkout rml-262-logfire-poc`
-	3. Run `uv run lert` inside of the newly created repo.
-	   On the first run `lert` will automatically create a user for you with an authentication token, displayed in the top-right corner. Note this token down. You'll need to specify, the token when configuring the channel for the logfire alert.
+    3. Obtain a read token from `https://logfire-us.pydantic.dev/<user-name>/<project-name>/settings/read-tokens`
+	4. Run `uv run lert` inside of the newly created repo.
+	   On the first run `lert` will automatically create a user for you.
+       Make sure to enter the read token from previous step.
+    5. The webhook URL will should be displayed in the top-right corner. Note this URL down, you'll need to add a channel in Logfire Alerts, to this URL.
 2. Clone the example repo: https://github.com/recurse-ML/logfire-example
 3. Checkout the branch with intentionally introduced bugs
 	```bash
