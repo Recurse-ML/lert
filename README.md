@@ -25,25 +25,29 @@ Demo CLI of Recurse ML alert investigator
 	```
 4. Create a logfire project
 5. Create an alert that's triggered on 500 status codes:
-   ```sql
-	SELECT * FROM RECORDS WHERE http_response_status_code>=500;
-	```
-	1. Create a channel for listening to the alert:
-		1. Create a new channel to send alerts to a specific destination
-		2. Channel Name: Recurse ML
-		3. Type: Webhook
-		4. Format: Raw Data.
-		5. Webhook URL: `https://logfire-test---squash-staging-b7tytoh6fa-ey.a.run.app/logfire/<your-lert-token>/`
-		    **TODO: change to prod url after deploying**
-		7. Select alert variant: Alert query has matches
-        8. Click "Send a test alert". You should receive a 200 status code.
-6. Create a write token in `https://logfire-us.pydantic.dev/<user-name>/<project-name>/settings/write-tokens`
-7. Set the `LOGFIRE_TOKEN` in the `.env.example` file in `logfire-example` root.
-8. `cp .env.example .env`
-9. Ensure docker is running on your system.
-10. Run the webapp: `sh ./start-app.sh`
-   `docker compose watch`
-11. Check that frontend is served on `http://localhost:5173` and backend (docs) on `http://localhost:8000/docs`.
+    ⚠️ **Important:** ensure alert settings are identical to the ones specified here ⚠️
+    1. Query:
+    ```sql
+    SELECT * FROM RECORDS WHERE http_response_status_code>=500;
+    ```
+    2. Execute the query: "every minute"
+    3. Include rows from: "the last minute"
+    4. Notify me when: "the query has results"
+6. Create a channel for listening to the alert:
+    a. Create a new channel to send alerts to a specific destination
+    b. Channel Name: Recurse ML
+    c. Type: Webhook
+    d. Format: Raw Data.
+    e. Webhook URL: `https://logfire-test---squash-staging-b7tytoh6fa-ey.a.run.app/logfire/<your-lert-token>/`
+        **TODO: change to prod url after deploying**
+    f. Select alert variant: Alert query has matches
+    g. Click "Send a test alert". You should receive a 200 status code.
+7. Create a write token in `https://logfire-us.pydantic.dev/<user-name>/<project-name>/settings/write-tokens`
+8. Set the `LOGFIRE_TOKEN` in the `.env.example` file in `logfire-example` root.
+9. `cp .env.example .env`
+10. Ensure docker is running on your system.
+11. Run the webapp: `sh ./start-app.sh`
+12. Check that frontend is served on `http://localhost:5173` and backend (docs) on `http://localhost:8000/docs`.
 
 ## Triggering errors
 
