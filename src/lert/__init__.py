@@ -61,8 +61,7 @@ class AlertClient:
         print("Please enter your logfire read token:")
 
         while True:
-            token = input("Token: ").strip()
-            if token:
+            if (token := input("Token: ").strip()):
                 print("✓ Token received!")
                 return token
             else:
@@ -98,7 +97,7 @@ class AlertClient:
     async def authenticate(self, read_token: str) -> Dict[str, str]:
         """Create user and get credentials"""
         response = await self.client.post(
-            "/logfire/user/", json={"read_token": read_token}
+            "/logfire/user/", json={"logfire_read_token": read_token}
         )
         response.raise_for_status()
         data = response.json()
