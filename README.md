@@ -79,8 +79,8 @@ curl -X 'POST' \
 
 1. Assumes alert is triggered by the following query:
    ```sql
-	SELECT * FROM RECORDS WHERE http_response_status_code>=500;
-	```
+    SELECT * FROM RECORDS WHERE http_response_status_code>=500;
+    ```
 
 
 # CLI Specs
