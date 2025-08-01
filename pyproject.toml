@@ -1,0 +1,56 @@
+[project]
+name = "lert"
+version = "0.1.1"
+description = "Demo of Recurse ML alert investigator."
+readme = "README.md"
+authors = [
+    {name = "Armin Stepanyan", email = "a@recurse.ml"},
+    {name = "Enzo Incutti", email = "e@recurse.ml"},
+    {name = "Constantinos Psomadakis", email = "c@recurse.ml"},
+]
+requires-python = ">=3.11"
+dependencies = [
+    "click",
+    "httpx",
+    "plumbum>=1.9.0",
+    "pydantic>=2.11.4",
+    "python-dotenv",
+    "pyinstaller>=6.13.0",
+    "rich",
+    "tenacity",
+    "textual>=4.0.0",
+]
+
+[project.optional-dependencies]
+
+test = [
+  "pytest >= 8.0",
+  "ruff >= 0.9",
+  "pyright",
+]
+
+dev = [
+  "pre-commit",
+  "textual-dev>=1.7.0",
+]
+
+[tool.ruff]
+include = ["src/**/*.py", "cli/**/*.py", "tests/**/*.py"]
+
+[tool.ruff.lint]
+select = ["F", # Pyflakes
+          "I", # isort
+          "E"] # pycodestyle
+ignore = ["E501", # line-too-long, conflicting with formatter
+          "E731"] # assigning lambda's to variables is a honking good idea
+
+[tool.ruff.lint.isort]
+known-local-folder = ["src", "lert"] # Necessary to separate imports for local package
+
+
+[project.scripts]
+lert = "lert:main"
+
+[build-system]
+requires = ["uv_build>=0.7.21,<0.8.0"]
+build-backend = "uv_build"
