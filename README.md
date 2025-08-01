@@ -1,195 +1,162 @@
-# lert
+# lert Demo Setup Guide
 
-Demo CLI of Recurse ML alert investigator
+Welcome to the Recurse ML X Logfire demo!
+This demo will show you how Recurse ML, can help you debug alerts in your application.
 
-# Recurse ML X Logfire Demo
+This demo has 3 components:
+1. `lert` (this repo): the interface for inspecting Recurse ML alert results.
+2. [`logfire-example`](https://github.com/recurse-ml/logfire-example): a sample repo, that's instrumented with Logfire.
+    We'll use it to simulate production alerts in a FastAPI web app. 
+3. Your Logfire project: it will listen for alerts from `logfire-example` and send them as webhooks to Recurse ML for analysis.
+    The analysis results, in turn, will be displayed here, in `lert`.
 
-## Setup
+## What You'll Need
 
-1. Install `lert`
-	1. Install dependencies:
-		1. `python3.11`
-		2. `uv` (if not present)
-		3. `direnv`
-	2. Clone: https://github.com/Recurse-ML/lert
-	   TMP: `git checkout rml-262-logfire-poc`
-    3. Obtain a read token from `https://logfire-us.pydantic.dev/<user-name>/<project-name>/settings/read-tokens`
-	4. Run `uv run lert` inside of the newly created repo.
-	   On the first run `lert` will automatically create a user for you.
-       Make sure to enter the read token from previous step.
-    5. The webhook URL will should be displayed in the top-right corner. Note this URL down, you'll need to add a channel in Logfire Alerts, to this URL.
-2. Clone the example repo: https://github.com/recurse-ML/logfire-example
-3. Checkout the branch with intentionally introduced bugs
-	```bash
-	git checkout demo/buggy-branch
-	```
-4. Create a logfire project
-5. Create an alert that's triggered on 500 status codes:
-    ⚠️ **Important:** ensure alert settings are identical to the ones specified here ⚠️
-    1. Query:
-    ```sql
-    SELECT * FROM RECORDS WHERE http_response_status_code>=500;
-    ```
-    2. Execute the query: "every minute"
-    3. Include rows from: "the last minute"
-    4. Notify me when: "the query has results"
-6. Create a channel for listening to the alert:
-    a. Create a new channel to send alerts to a specific destination
-    b. Channel Name: Recurse ML
-    c. Type: Webhook
-    d. Format: Raw Data.
-    e. Webhook URL: `https://logfire-test---squash-staging-b7tytoh6fa-ey.a.run.app/logfire/<your-lert-token>/`
-        **TODO: change to prod url after deploying**
-    f. Select alert variant: Alert query has matches
-    g. Click "Send a test alert". You should receive a 200 status code.
-7. Create a write token in `https://logfire-us.pydantic.dev/<user-name>/<project-name>/settings/write-tokens`
-8. Set the `LOGFIRE_TOKEN` in the `.env.example` file in `logfire-example` root.
-9. `cp .env.example .env`
-10. Ensure docker is running on your system.
-11. Run the webapp: `sh ./start-app.sh`
-12. Check that frontend is served on `http://localhost:5173` and backend (docs) on `http://localhost:8000/docs`.
+Before we start, make sure you have these dependencies installed:
+- `python3.11`
+- `uv` (if not already installed)
+- Docker (running on your system)
 
-## Triggering errors
+## Part 1: Setting Up the Alert Investigator
 
-1. Any of the actions bellow should trigger an alert.
-2. You can verify that the action has been executed successfully by navigating the live logs page on seeing whether there's an ERROR https://logfire-us.pydantic.dev/<user-name>/<project-name>
-	(alerts take)
+Let's get the lert CLI tool up and running:
 
-**Existing endpoints:**
+**1. Configure your Logfire connection**
 
-GET request to 
+First, grab a read token from your Logfire project:
+- Navigate to `https://logfire-us.pydantic.dev/<user-name>/<project-name>/settings/read-tokens`
+- Create a new read token and copy it
+
+**2. Start lert**
+```bash
+uv run lert
+```
+
+On your first run, lert will automatically create a user account for you. When prompted, enter the read token you created in the previous step.
+
+**3. Note your webhook URL**
+
+Once lert is running, you'll see a webhook URL displayed in the top-right corner. Write this down - you'll need it for the next section!
+
+## Part 2: Setting Up Your Demo Application
+
+**1. Get the example application**
+
+_I've already created example bugs in `demo/buggy-branch` for you to investigate._
+
+```bash
+git clone https://github.com/recurse-ML/logfire-example
+cd logfire-example
+git fetch
+git checkout demo/buggy-branch
+```
+
+**2. Configure Logfire for the app**
+
+Create a write token for your application:
+- Go to `https://logfire-us.pydantic.dev/<user-name>/<project-name>/settings/write-tokens`
+- Create a new write token
+
+Set up your environment:
+```bash
+# Edit .env.example and set your LOGFIRE_TOKEN
+cp .env.example .env
+```
+
+**3. Start the application**
+
+```bash
+./start-app.sh
+```
+
+Your app should now be running:
+- Frontend: `http://localhost:5173`
+- Backend API docs: `http://localhost:8000/docs`
+
+## Part 3: Creating Your Alert System
+
+**1. Create a Logfire project**
+
+If you haven't already, set up a new project in Logfire.
+
+**2. Set up the alert query**
+
+⚠️ **Important:** Use these exact settings for the demo to work properly!
+
+- **Query:**
+  ```sql
+  SELECT * FROM RECORDS WHERE http_response_status_code>=500;
+  ```
+- **Execute the query:** "every minute"
+- **Include rows from:** "the last minute"  
+- **Notify me when:** "the query has results"
+
+**3. Connect the alert to lert**
+
+Create a new channel to send alerts to the Recurse ML investigator:
+
+- **Channel Name:** Recurse ML
+- **Type:** Webhook
+- **Format:** Raw Data
+- **Webhook URL:** `https://squash-322339097191.europe-west3.run.app/logfire/<your-lert-token>/`
+- **Select alert variant:** Alert query has matches
+
+Test your setup by clicking "Send a test alert" - you should get a 200 status code.
+
+## Testing Your Setup
+
+**Trigger an error**
+
+Try this API call to generate a 500 error:
 ```bash
 curl -X 'POST' \
-  'http://localhost:8000/api/v1/password-recovery/foobar%40tar.com' \
+  'http://localhost:8000/api/v1/password-recovery/nonexistent%40user.com' \
   -H 'accept: application/json' \
   -d ''
 ```
 
-**Creating new errors:** you might want to introduce your own bugs into the code and see Recurse ML analysis results:
-1. Modify the web app's code.
-2. Commit and push the changes
-3. Run `sh ./start-app.sh`
-4. Trigger the alert.
+**Verify the alert worked**
 
-## Bring Your Own Repo
+You can check that your error was logged by visiting your Logfire live logs page:
+`https://logfire-us.pydantic.dev/<user-name>/<project-name>`
 
-⚠️If using your own repo, ensure that [Recurse ML GH App](https://github.com/marketplace/recurse-ml/) is installed on it⚠️
+Look for ERROR entries.
 
-## Limitations
+Now, an alert should be triggered within a minute of the original log in the alerts section.
 
-1. Assumes alert is triggered by the following query:
-   ```sql
-    SELECT * FROM RECORDS WHERE http_response_status_code>=500;
-    ```
+Immediately after an alert is triggered, you should see the alert entry in `lert`.
+It will initially have status "pending".
+Within 5 minutes, the alert should be processed and its status will change to "success" (or in the unfortunate case to "error").
+
+If you get an error or analysis takes longer than that, please do reach out (email's at the bottom of this page).
 
 
-# CLI Specs
+## Experimenting Further
 
-Interface:
-1. Textual table of all triggered alerts in the project
-2. Select an alert for investigation
-3. Detailed investigation results for the alert
+**Create your own bugs**
 
-Query data:
-(On initialization and every 5 seconds)
+Want to see how the system handles different types of errors?
 
-1. GET /logfire/reports/
-2. Update the table of investigations
+1. Modify the webapp's code to introduce new bugs
+2. Commit and push your changes  
+3. Run `sh ./start-app.sh` to restart with your changes
+4. Trigger the alert and see what the AI investigator finds!
 
-## User creation
+## Using Your Own Repository
 
-Before creating the user:
-1. `lert` creates a template credentials.json file.
-2. Asks the user to enter their logfire read token in credentials.json (with a pop-up)
-3. Verifies that the logfire read token has been entered (asks the user again, if it hasn't)
-4. Sends a POST request to `/logfire/user/`
+If you want to try this with your own codebase instead of the demo app, make sure the [Recurse ML GitHub App](https://github.com/marketplace/recurse-ml/) is installed on your repository first.
 
+## Current Limitations
 
-## Report View
+This demo assumes your alert uses the specific query:
+```sql
+SELECT * FROM RECORDS WHERE http_response_status_code>=500;
+```
 
-1. When a user presses enter, on an alert that has a "success" status and a InvestigationResponse.report field that's not None, they should enter a report view.
-2. The report view must render the InvestigationResponse.report field as markdown.
-3. Pressing (h) for home must take them back to home screen
+---
 
+That's it!
+You just saw how Recurse ML can help you debug your Logfire alerts.
 
-## Authentication:
-
-1. Generate secret key
-2. Create a logfire project
-3. Create an alert in the project
-4. Add a Recurse ML webhook to the alert. In the webhook, specify your token.
-
-Generating and viewing the token:
-Deployment: upon initialization, generate the token in the local storage
-            user has a shortcut to view the token in the CLI UI
-
-# Recurse ML Logfire Endpoint
-
-This API provides endpoints for integrating with Logfire, a monitoring and alerting platform. The API enables webhook handling, user management, and incident investigation reporting.
-
-## Authentication
-
-### Logfire API Request Authentication
-
-For API endpoints (`/logfire/reports/` and `/logfire/report/{alert_id}/`), authentication is performed using custom headers:
-
-- **X-Logfire-User-ID**: Your Logfire user identifier
-- **X-Logfire-Secret**: Your Logfire webhook secret
-
-Both headers are required for authentication. The system verifies that the provided user ID and secret match a valid Logfire user in the system.
-
-### Logfire Webhook Authentication
-
-For webhook endpoints (`/logfire/{logfire_secret}/`), authentication is performed by including the webhook secret directly in the URL path. The secret is validated against the registered Logfire user credentials.
-
-## Endpoints
-
-### User Management
-
-**POST /logfire/user/**
-- Creates a new Logfire user with a read token
-- **Authentication**: None required
-- **Request Body**: 
-  ```json
-  {
-    "read_token": "your_logfire_read_token"
-  }
-  ```
-- **Response**: User ID, read token, and secret for future authentication
-
-### Reports and Investigations
-
-**GET /logfire/reports/**
-- Retrieves all investigation reports for the authenticated user
-- **Authentication Required**: X-Logfire-User-ID and X-Logfire-Secret headers
-- **Response**: Array of investigation responses with ID, alert ID, status, and report content
-
-**GET /logfire/report/{alert_id}/**
-- Retrieves a specific investigation report by alert ID
-- **Authentication Required**: X-Logfire-User-ID and X-Logfire-Secret headers
-- **Parameters**: `alert_id` (string) - The alert identifier
-- **Response**: Investigation response with details including:
-  - `investigation_id`: Internal investigation identifier
-  - `alert_id`: The original alert identifier
-  - `status`: Investigation status (PENDING, ERROR, or completed)
-  - `report`: Investigation report content (null if pending or error)
-
-### Webhook Handling
-
-**POST /logfire/{logfire_secret}/**
-- Handles incoming Logfire webhooks for incident investigations
-- **Authentication**: Webhook secret embedded in URL path
-- **Parameters**: `logfire_secret` (string) - Webhook secret in URL path
-- **Request Body**: Logfire webhook payload containing alert information
-- **Functionality**: Creates incident investigations from Logfire alerts
-- **Response**: 
-  - **201 Created**: Investigation created successfully
-  - **409 Conflict**: Investigation already exists for this alert
-  - **400 Bad Request**: Invalid webhook data or missing alert_id
-
-## Error Responses
-
-- **401 Unauthorized**: Missing or invalid authentication credentials
-- **404 Not Found**: Investigation not found for the given alert ID
-- **500 Internal Server Error**: Server-side processing error
+Did you run into any issues? Have feedback on the prototype? Either way, I'd love to hear all about it: <first letter of the alphabet> (at) recurse.ml
 

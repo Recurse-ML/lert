@@ -49,7 +49,6 @@ class InvestigationReport(BaseModel):
 
 class AlertClient:
     def __init__(self, base_url: str = HOST_URL):
-        self.base_url = base_url
         self.client = httpx.AsyncClient(base_url=base_url)
         self.user_id: Optional[str] = None
         self.secret: Optional[str] = None
@@ -90,7 +89,6 @@ class AlertClient:
     def save_credentials(self, data: Dict[str, str]) -> None:
         """Save credentials to local storage"""
         self.config_dir.mkdir(exist_ok=True)
-        data["webhook_url"] = f"{HOST_URL}/logfire/{data['secret']}"
         with open(self.config_file, "w") as f:
             json.dump(data, f, indent=2)
 
@@ -326,7 +324,7 @@ class AlertApp(App):
             user_id = self.user_credentials.get("id", "N/A")
             secret = self.user_credentials.get("secret", "N/A")
             user_info.update(
-                f"User ID: {user_id} | Webhook URL: {HOST_URL}/logfire/{secret}\n(Can't copy? URL is located in {str(self.client.config_file)})"
+                f"User ID: {user_id} | Webhook URL: {HOST_URL}/logfire/{secret}/\n(Can't copy? URL is located in {str(self.client.config_file)})"
             )
         else:
             user_info.update("Connecting...")
