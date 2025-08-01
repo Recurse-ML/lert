@@ -1,7 +1,7 @@
 # lert Demo Setup Guide
 
 Welcome to the Recurse ML X Logfire demo!
-This demo will show you how Recurse ML, can help you debug alerts in your application.
+This demo will show you how Recurse ML, can find the root cause for alerts in your application.
 
 This demo has 3 components:
 1. `lert` (this repo): the interface for inspecting Recurse ML alert results.
