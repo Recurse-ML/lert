@@ -45,6 +45,7 @@ class InvestigationReport(BaseModel):
     alert_id: str
     status: str
     report: Optional[str] = None
+    stack_trace: Optional[str] = None
 
 
 class AlertClient:
@@ -184,6 +185,9 @@ class ReportScreen(Screen):
             ),
             Label(f"Status: {self.report.status}", id="report-status"),
             Markdown(self.report.report or "No report available", id="report-content"),
+            Label("Stack Trace"),
+            Markdown(f"```\n{self.report.stack_trace}\n```", id="report-stack-trace"),
+
             id="report-container",
         )
         yield Footer()
@@ -243,20 +247,23 @@ class AlertApp(App):
         padding: 1;
     }
 
-    #report-title {
-        color: $primary;
+    #report-container Label {
         margin-bottom: 1;
     }
 
-    #report-status {
-        margin-bottom: 1;
+    #report-title {
+        color: $primary;
+    }
+
+    #report-container {
+        border: solid $accent;
+        background: $panel;
+        padding: 1;
+
     }
 
     #report-content {
         margin-bottom: 1;
-        padding: 1;
-        background: $panel;
-        border: solid $accent;
         height: 1fr;
     }
     """
